@@ -1,0 +1,589 @@
+{
+  "info": {
+    "_postman_id": "b7f4c0d2-7a1e-4a7e-9f4e-flipplaydemo",
+    "name": "FlipPlay API - Demo Modul 4",
+    "description": "Koleksi pengujian endpoint REST API FlipPlay (Laravel 12). Jalankan `php artisan migrate:fresh --seed` sebelum mengeksekusi koleksi ini. Urutan folder disusun agar skenario berhasil dan gagal dapat dijalankan berurutan.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "media_id",
+      "value": "1"
+    },
+    {
+      "key": "pengguna_id",
+      "value": "1"
+    },
+    {
+      "key": "judul_media",
+      "value": "Dune: Part Two"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Media (CRUD)",
+      "item": [
+        {
+          "name": "List Media + Filter Judul",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Response berisi data dan meta pagination', function () { pm.expect(body).to.have.property('data'); pm.expect(body).to.have.property('meta'); });",
+                  "if (body.data && body.data.length > 0) { pm.collectionVariables.set('media_id', body.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/media?search=incep&per_page=10",
+            "description": "Menampilkan daftar media. Query `search` memfilter judul, `jenis` memfilter jenis, `per_page` mengatur jumlah data per halaman."
+          }
+        },
+        {
+          "name": "Create Media",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('judul_media', 'Dune: Part Two ' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('media_id', body.data.id);",
+                  "pm.test('Judul sesuai', function () { pm.expect(body.data.judul).to.include('Dune: Part Two'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul\": \"{{judul_media}}\",\n  \"jenis\": \"film\",\n  \"genre\": \"Sci-Fi\",\n  \"tahun_rilis\": 2024,\n  \"deskripsi\": \"Paul Atreides bersatu dengan Fremen untuk membalas dendam.\",\n  \"rating\": 8.6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/media",
+            "description": "Menambahkan media baru. Judul wajib unik."
+          }
+        },
+        {
+          "name": "Create Media - Judul Duplikat (Gagal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Error validasi judul muncul', function () { pm.expect(body.errors).to.have.property('judul'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul\": \"{{judul_media}}\",\n  \"jenis\": \"film\",\n  \"genre\": \"Sci-Fi\",\n  \"tahun_rilis\": 2024\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/media",
+            "description": "Skenario gagal: judul yang sudah ada tidak boleh didaftarkan lagi."
+          }
+        },
+        {
+          "name": "Create Media - Judul Kosong (Gagal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Pesan judul wajib diisi', function () { pm.expect(body.errors.judul[0]).to.eql('Judul media wajib diisi.'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"judul\": \"\",\n  \"jenis\": \"film\",\n  \"genre\": \"Action\",\n  \"tahun_rilis\": 2024\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/media",
+            "description": "Skenario gagal: judul kosong harus ditolak Form Request."
+          }
+        },
+        {
+          "name": "Detail Media (with pengguna)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Relasi pengguna ikut tampil', function () { pm.expect(body.data).to.have.property('pengguna'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/media/{{media_id}}",
+            "description": "Menampilkan detail satu media beserta pengguna yang memasukkannya ke koleksi (API Resource whenLoaded)."
+          }
+        },
+        {
+          "name": "Update Media",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Rating terbarui', function () { pm.expect(body.data.rating).to.eql(9.1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 9.1,\n  \"deskripsi\": \"Paul Atreides bersatu dengan Fremen untuk membalas dendam.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/media/{{media_id}}",
+            "description": "Memperbarui media. Validasi judul unik tetap berjalan dan mengabaikan judul milik media ini sendiri."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Pengguna",
+      "item": [
+        {
+          "name": "List Pengguna",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Jumlah koleksi dihitung', function () { pm.expect(body.data[0]).to.have.property('jumlah_koleksi'); });",
+                  "if (body.data && body.data.length > 0) { pm.collectionVariables.set('pengguna_id', body.data[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna",
+            "description": "Menampilkan daftar pengguna beserta jumlah media di koleksinya."
+          }
+        },
+        {
+          "name": "Create Pengguna",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('email_pengguna', 'demo' + Date.now() + '@flipplay.test');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('pengguna_id', body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama\": \"Pengguna Demo\",\n  \"email\": \"{{email_pengguna}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/pengguna",
+            "description": "Menambahkan pengguna baru. Email wajib unik dan disimpan dalam huruf kecil."
+          }
+        },
+        {
+          "name": "Detail Pengguna + Koleksi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Relasi koleksi ikut tampil', function () { pm.expect(body.data).to.have.property('koleksi'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}",
+            "description": "Menampilkan detail pengguna beserta seluruh koleksi media-nya."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Koleksi (Custom Action)",
+      "item": [
+        {
+          "name": "Tambah Media ke Koleksi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Koleksi bertambah', function () { pm.expect(body.data.jumlah_koleksi).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi/{{media_id}}",
+            "description": "Custom action: menambahkan media ke koleksi pengguna (attach pada tabel pivot koleksi_media)."
+          }
+        },
+        {
+          "name": "Tambah Media yang Sama Dua Kali (Gagal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409 Conflict', function () { pm.response.to.have.status(409); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Pesan duplikat koleksi', function () { pm.expect(body.message).to.eql('Media sudah ada di koleksi pengguna.'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi/{{media_id}}",
+            "description": "Skenario gagal: media yang sama tidak boleh masuk dua kali ke koleksi pengguna yang sama."
+          }
+        },
+        {
+          "name": "Lihat Koleksi Pengguna",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('Koleksi berisi media', function () { pm.expect(body.data.koleksi.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi",
+            "description": "Menampilkan koleksi media milik seorang pengguna beserta waktu penambahannya."
+          }
+        },
+        {
+          "name": "Hapus Media dari Koleksi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi/{{media_id}}",
+            "description": "Custom action: menghapus media dari koleksi pengguna (detach pada tabel pivot)."
+          }
+        },
+        {
+          "name": "Hapus Media yang Tidak Ada di Koleksi (Gagal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi/{{media_id}}",
+            "description": "Skenario gagal: menghapus media yang sudah tidak ada di koleksi harus mengembalikan 404."
+          }
+        },
+        {
+          "name": "Tambah Media Tidak Dikenal (Gagal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/pengguna/{{pengguna_id}}/koleksi/999999",
+            "description": "Skenario gagal: route model binding mengembalikan 404 jika media tidak ditemukan."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Skenario 404",
+      "item": [
+        {
+          "name": "Detail Media Tidak Ditemukan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Pesan JSON konsisten', function () { pm.expect(pm.response.json()).to.have.property('message'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/media/999999",
+            "description": "Skenario gagal: media yang tidak ada mengembalikan respons JSON 404 yang konsisten."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cleanup",
+      "item": [
+        {
+          "name": "Delete Media (Cleanup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/media/{{media_id}}",
+            "description": "Menghapus media yang dibuat selama demo. Relasi pivot ikut dibersihkan."
+          }
+        }
+      ]
+    }
+  ]
+}
