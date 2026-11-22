@@ -27,9 +27,12 @@ REST API FlipPlay untuk Demo Modul 4, melanjutkan simulasi OOP FlipPlay dari Mod
 composer install
 copy .env.example .env
 php artisan key:generate
+php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
 php artisan migrate:fresh --seed
 php artisan serve
 ```
+
+> Di macOS/Linux, gunakan `cp .env.example .env`.
 
 Base URL API: `http://127.0.0.1:8000/api`
 
