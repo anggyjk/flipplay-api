@@ -21,6 +21,10 @@
     {
       "key": "judul_media",
       "value": "Dune: Part Two"
+    },
+    {
+      "key": "created_media_id",
+      "value": ""
     }
   ],
   "item": [
@@ -75,6 +79,7 @@
                   "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
                   "var body = pm.response.json();",
                   "pm.collectionVariables.set('media_id', body.data.id);",
+                  "pm.collectionVariables.set('created_media_id', body.data.id);",
                   "pm.test('Judul sesuai', function () { pm.expect(body.data.judul).to.include('Dune: Part Two'); });"
                 ]
               }
@@ -579,8 +584,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/media/{{media_id}}",
-            "description": "Menghapus media yang dibuat selama demo. Relasi pivot ikut dibersihkan."
+            "url": "{{base_url}}/media/{{created_media_id}}",
+            "description": "Menghapus media yang dibuat selama demo. Relasi pivot ikut dibersihkan. Jalankan Create Media terlebih dahulu."
           }
         }
       ]
